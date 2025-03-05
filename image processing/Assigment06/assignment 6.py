@@ -127,6 +127,7 @@ for epoch in range(epochs):
 
 # lets save the results in a df
 results = pd.DataFrame({
+    "Epochs": list(range(1, epochs + 1)),
     "Train Loss": train_losses,
     "Train Accuracy": train_accuracies,
     "Test Accuracy": test_accuracies
