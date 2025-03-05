@@ -131,3 +131,27 @@ results = pd.DataFrame({
     "Train Accuracy": train_accuracies,
     "Test Accuracy": test_accuracies
 })
+print(results)
+
+# lets plot the results finally!!!!!!!
+# 4. Plot training loss vs epochs.
+# 5. Plot training and testing accuracies against epochs.
+# 6. Your accuracy should be close to 95%.  its 95 ish so good enough, who knows if it will change when i rerun it, so i will finish it in one go
+
+# Plot for training loss against epochs using the df
+plt.figure(figsize=(8,5))
+plt.plot(results["Epoch"], results["Train Loss"], label="Train Loss")
+plt.title("Training Loss vs Epochs")
+plt.xlabel("Epochs")
+plt.ylabel("Training Loss")
+plt.show()
+
+# Plot for training and testing accuracies against epochs using the df
+plt.figure(figsize=(8,5))
+plt.plot(results["Epoch"], results["Train Accuracy"], label="Train Accuracy")
+plt.plot(results["Epoch"], results["Test Accuracy"], label="Test Accuracy")
+plt.title("Training and Testing Accuracies vs Epochs")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
