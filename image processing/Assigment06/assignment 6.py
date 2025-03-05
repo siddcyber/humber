@@ -18,6 +18,7 @@ import os
 import cv2
 from torch.utils.data import DataLoader, dataset , random_split
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # first we need to load the data and standardize some transformations
 transform = transforms.Compose([
     transforms.Resize((64, 64)),
@@ -32,7 +33,7 @@ train_data, test_data = random_split(data, [train_size, test_size])
 
 # now we need to create the dataloaders for the training and testing data
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_data, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_data, batch_size=32, shuffle=False)
 
 # lets try to use the code the stupid professor gave us
 
@@ -51,35 +52,53 @@ ANNiris = nn.Sequential(
                 nn.Linear(512, 128),  # Second hidden layer.
                 nn.ReLU(),  # Activation.
                 nn.Linear(128, len(data.classes))  # Output layer.
-)
-learningRate = 0.01
+).to(device)
+# learningRate = 0.01
+
 lossfunc = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(ANNiris.parameters(), lr=learningRate)
+# optimizer = torch.optim.SGD(ANNiris.parameters(), lr=learningRate)
+# changing the optimizer to Adam because SGD did not work
+optimizer = optim.Adam(ANNiris.parameters(), lr=0.001)
 
 epochs = 20
-losses = torch.zeros(epochs)  # setting place holder for for loop.
+losses = torch.zeros(epochs)  # setting place holder for for loop
+
+# lists to record results
+train_losses = []
+train_accuracies = []
+test_accuracies = []
 #  no need to manuallu convert the data as flatten does it for us
 # for i, j in train_loader:
 #     temp_data = i.view(-1, 4)
 #     labels = j
 
 for epoch in range(epochs):
+    ANNiris.train() # Setting the model to training mode
+    # these help track the losses and accuracy for each epoch
     epoch_loss = 0.0
+    correct_train = 0
+    total_train = 0
     # adding a loop to get the data from the train_loader and using NN.Squential to get required input
     for images, labels in train_loader:
-        ypred = ANNiris(images.float())
+        # first we need to move the data to the device
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        ypred = ANNiris(images)
         loss = lossfunc(ypred, labels)
 
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        epoch_loss += loss.item()
-        losses[epoch] = epoch_loss / len(train_loader)  # Average loss for this epoch.
+        epoch_loss += loss.item() * images.size(0)
+        # get the predicted class by getting the index of the max value in the output
+        _, predicted = torch.max(ypred, 1)
+        total_train += labels.size(0)
+        correct_train += (predicted == labels).sum().item()
+    # lets calculate the loss and accuracy for the epoch
+    train_loss = epoch_loss / total_train
+    train_accuracy = correct_train / total_train
+    # finally we append the results to the lists
+    train_losses.append(train_loss)
+    train_accuracies.append(train_accuracy)
 
-        if (epoch % 100) == 0:
-            print(f'Epoch {epoch}: Loss = {losses[epoch]:.4f}')
-
-accuracy = 100 * torch.mean((torch.argmax(ypred, axis=1) == labels).float())
-
-
+    print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss:.2f}, Train Accuracy: {train_accuracy:.2f}")
