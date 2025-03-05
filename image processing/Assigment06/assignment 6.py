@@ -36,27 +36,39 @@ test_loader = DataLoader(test_data, batch_size=32, shuffle=True)
 
 # lets try to use the code the stupid professor gave us
 
-ANNiris = nn.Sequential(
-          nn.Linear(4,32),
-          nn.ReLU(),
-          nn.Linear(32,32),
-          nn.ReLU(),
-          nn.Linear(32,3),
-          )
+# ANNiris = nn.Sequential(
+#           nn.Linear(4,32),
+#           nn.ReLU(),
+#           nn.Linear(32,32),
+#           nn.ReLU(),
+#           nn.Linear(32,3),
+#           )
+
+ANNiris = nn.Sequential( nn.Flatten(),  # Flatten the image (3 x 64 x 64) into a vector.
+                nn.Linear(3 * 64 * 64, 512),  # First hidden layer.
+                nn.ReLU(),  # Activation.
+                nn.Linear(512, 128),  # Second hidden layer.
+                nn.ReLU(),  # Activation.
+                nn.Linear(128, len(data.classes))  # Output layer.
+)
 learningRate = 0.01
 lossfunc = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(ANNiris.parameters(), lr=learningRate)
 
 epochs = 2001
 losses = torch.zeros(epochs)  # setting place holder for for loop.
-for epochi in range(epochs):
+for i, j in train_loader:
+    temp_data = i.view(-1, 4)
+    labels = j
 
-    ypred = ANNiris(data.float())
+for epoch in range(epochs):
+
+    ypred = ANNiris(temp_data.float())
     loss = lossfunc(ypred, labels)
-    losses[epochi] = loss.detach()
+    losses[epoch] = loss.detach()
 
-    if (epochi % 100) == 0:
-        print(f' epochs : {epochi}  loss : {loss : 2.2f}')
+    if (epoch % 100) == 0:
+        print(f' epochs : {epoch}  loss : {loss : 2.2f}')
 
     # backprop
     optimizer.zero_grad()  # Initializing the gradient to zero. zero_grad() restarts looping without losses from the last
