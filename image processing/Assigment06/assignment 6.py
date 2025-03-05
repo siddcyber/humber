@@ -44,7 +44,8 @@ test_loader = DataLoader(test_data, batch_size=32, shuffle=True)
 #           nn.Linear(32,3),
 #           )
 
-ANNiris = nn.Sequential( nn.Flatten(),  # Flatten the image (3 x 64 x 64) into a vector.
+ANNiris = nn.Sequential(
+                nn.Flatten(),  # Flatten the image (3 x 64 x 64) into a vector.
                 nn.Linear(3 * 64 * 64, 512),  # First hidden layer.
                 nn.ReLU(),  # Activation.
                 nn.Linear(512, 128),  # Second hidden layer.
@@ -55,32 +56,29 @@ learningRate = 0.01
 lossfunc = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(ANNiris.parameters(), lr=learningRate)
 
-epochs = 2001
+epochs = 20
 losses = torch.zeros(epochs)  # setting place holder for for loop.
-for i, j in train_loader:
-    temp_data = i.view(-1, 4)
-    labels = j
+#  no need to manuallu convert the data as flatten does it for us
+# for i, j in train_loader:
+#     temp_data = i.view(-1, 4)
+#     labels = j
 
 for epoch in range(epochs):
+    epoch_loss = 0.0
+    # adding a loop to get the data from the train_loader and using NN.Squential to get required input
+    for images, labels in train_loader:
+        ypred = ANNiris(images.float())
+        loss = lossfunc(ypred, labels)
 
-    ypred = ANNiris(temp_data.float())
-    loss = lossfunc(ypred, labels)
-    losses[epoch] = loss.detach()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-    if (epoch % 100) == 0:
-        print(f' epochs : {epoch}  loss : {loss : 2.2f}')
+        epoch_loss += loss.item()
+        losses[epoch] = epoch_loss / len(train_loader)  # Average loss for this epoch.
 
-    # backprop
-    optimizer.zero_grad()  # Initializing the gradient to zero. zero_grad() restarts looping without losses from the last
-    # step if you use the gradient method for decreasing the error (or losses).If you do not use
-    # zero_grad() the loss will increase not decrease as required.Gradients accumulate with every backprop.
-    # To prevent compounding we need to  reset the stored gradient for each new epoch.
-
-    loss.backward()  # do gradient of all parameters for which we set required_grad= True. parameters could be any
-    # variable defined in code.
-
-    optimizer.step()  # according to the optimizer function (defined previously in our code), we update those parameters
-    # to finally get the minimum loss(error).
+        if (epoch % 100) == 0:
+            print(f'Epoch {epoch}: Loss = {losses[epoch]:.4f}')
 
 accuracy = 100 * torch.mean((torch.argmax(ypred, axis=1) == labels).float())
 
