@@ -13,6 +13,7 @@ import torch.optim as optim
 import torchvision
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 import os
 import cv2
@@ -60,7 +61,7 @@ lossfunc = nn.CrossEntropyLoss()
 # changing the optimizer to Adam because SGD did not work
 optimizer = optim.Adam(ANNiris.parameters(), lr=0.001)
 
-epochs = 20
+epochs = 10
 losses = torch.zeros(epochs)  # setting place holder for for loop
 
 # lists to record results
@@ -102,3 +103,31 @@ for epoch in range(epochs):
     train_accuracies.append(train_accuracy)
 
     print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss:.2f}, Train Accuracy: {train_accuracy:.2f}")
+
+#  now lets work on test model and compare acccuracies
+for epoch in range(epochs):
+    ANNiris.eval() # Setting the model to evaluation mode
+    correct_test = 0
+    total_test = 0
+    # adding a loop to get the data from the test_loader and using NN.Squential to get required input
+    for images, labels in test_loader:
+        # first we need to move the data to the device
+        images, labels = images.to(device), labels.to(device)
+        ypred = ANNiris(images)
+        # get the predicted class by getting the index of the max value in the output
+        _, predicted = torch.max(ypred, 1)
+        total_test += labels.size(0)
+        correct_test += (predicted == labels).sum().item()
+    # lets calculate the accuracy for the epoch
+    test_accuracy = correct_test / total_test
+    # finally we append the results to the lists
+    test_accuracies.append(test_accuracy)
+
+    print(f"Epoch {epoch + 1}/{epochs}, Test Accuracy: {test_accuracy:.2f}")
+
+# lets save the results in a df
+results = pd.DataFrame({
+    "Train Loss": train_losses,
+    "Train Accuracy": train_accuracies,
+    "Test Accuracy": test_accuracies
+})
